@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Building2, Globe2, UserPlus } from "lucide-react";
+import { Building2, Globe2, LogOut, Settings2, ShieldCheck, UserPlus } from "lucide-react";
 import {
   hasInputData,
   InputStore,
@@ -12,6 +12,7 @@ import {
 import { PRODUCT_DATA, CURRENT_QUARTER } from "@/constants/mockData";
 import { formatCurrency, attainmentPct } from "@/lib/formatters";
 import { useRevenueSnapshot } from "@/hooks/useRevenueSnapshot";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const PRODUCT_TABS: { id: Product; label: string }[] = [
   { id: "Nuro", label: "Nuro" },
@@ -153,10 +154,12 @@ function ArrNumberField({
   value,
   onChange,
   negative = false,
+  disabled = false,
 }: {
   value: number;
   onChange: (value: number) => void;
   negative?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
@@ -166,11 +169,12 @@ function ArrNumberField({
         min={0}
         step={1}
         value={Math.abs(value)}
+        disabled={disabled}
         onChange={(e) => {
           const nextValue = Math.max(0, Number(e.target.value) || 0);
           onChange(negative ? -nextValue : nextValue);
         }}
-        className="w-36 bg-transparent px-2 text-sm font-semibold text-gray-800 outline-none"
+        className="w-36 bg-transparent px-2 text-sm font-semibold text-gray-800 outline-none disabled:cursor-not-allowed disabled:text-gray-400"
       />
     </div>
   );
@@ -184,6 +188,7 @@ function ArrTrackerTable({
   onAdd,
   onUpdate,
   onRemove,
+  disabled = false,
 }: {
   title: string;
   items: ArrTrackerItem[];
@@ -192,6 +197,7 @@ function ArrTrackerTable({
   onAdd: () => void;
   onUpdate: (id: string, patch: Partial<ArrTrackerItem>) => void;
   onRemove: (id: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -211,14 +217,16 @@ function ArrTrackerTable({
           <input
             type="text"
             value={draft.clientName}
+            disabled={disabled}
             onChange={(e) => onDraftChange({ ...draft, clientName: e.target.value })}
             placeholder="Client name"
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300"
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <select
             value={draft.product}
+            disabled={disabled}
             onChange={(e) => onDraftChange({ ...draft, product: e.target.value as Product })}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300"
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             {PRODUCTS.map((product) => (
               <option key={product} value={product}>{product}</option>
@@ -226,11 +234,13 @@ function ArrTrackerTable({
           </select>
           <ArrNumberField
             value={draft.arrValue}
+            disabled={disabled}
             onChange={(arrValue) => onDraftChange({ ...draft, arrValue })}
           />
           <button
             onClick={onAdd}
-            className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+            disabled={disabled}
+            className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Add row
           </button>
@@ -255,19 +265,21 @@ function ArrTrackerTable({
                 {items.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 last:border-b-0">
                     <td className="px-3 py-3">
-                      <input
-                        type="text"
-                        value={item.clientName}
-                        onChange={(e) => onUpdate(item.id, { clientName: e.target.value })}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300"
-                      />
+                        <input
+                          type="text"
+                          value={item.clientName}
+                          disabled={disabled}
+                          onChange={(e) => onUpdate(item.id, { clientName: e.target.value })}
+                          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300 disabled:cursor-not-allowed disabled:bg-gray-100"
+                        />
                     </td>
                     <td className="px-3 py-3">
-                      <select
-                        value={item.product}
-                        onChange={(e) => onUpdate(item.id, { product: e.target.value as Product })}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300"
-                      >
+                        <select
+                          value={item.product}
+                          disabled={disabled}
+                          onChange={(e) => onUpdate(item.id, { product: e.target.value as Product })}
+                          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-violet-300 disabled:cursor-not-allowed disabled:bg-gray-100"
+                        >
                         {PRODUCTS.map((product) => (
                           <option key={product} value={product}>{product}</option>
                         ))}
@@ -276,14 +288,16 @@ function ArrTrackerTable({
                     <td className="px-3 py-3">
                       <ArrNumberField
                         value={item.arrValue}
+                        disabled={disabled}
                         onChange={(arrValue) => onUpdate(item.id, { arrValue })}
                       />
                     </td>
                     <td className="px-3 py-3 text-right">
-                      <button
-                        onClick={() => onRemove(item.id)}
-                        className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 transition-colors hover:text-rose-600"
-                      >
+                        <button
+                          onClick={() => onRemove(item.id)}
+                          disabled={disabled}
+                          className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 transition-colors hover:text-rose-600 disabled:cursor-not-allowed disabled:text-gray-400"
+                        >
                         Remove
                       </button>
                     </td>
@@ -453,9 +467,10 @@ function TotalBlock({
 }
 
 export default function GlobalDashboardPage() {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { store, lastSaved } = useRevenueSnapshot();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { access, canEdit, signOut } = useAuth();
+    const { store, lastSaved } = useRevenueSnapshot();
   const initialTopTab = searchParams.get("tracker") === "arr" ? "arr" : "sales";
   const [topTrackerTab, setTopTrackerTab] = useState<"sales" | "arr">(initialTopTab);
   const [arrTracker, setArrTracker] = useState<ArrTrackerState>(() => loadArrTrackerState());
@@ -551,19 +566,39 @@ export default function GlobalDashboardPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            {lastSaved && (
-              <span className="hidden md:flex items-center gap-1 text-[11px] text-violet-700 font-medium">
-                Last updated {lastSaved}
+            <div className="flex items-center gap-2">
+              {lastSaved && (
+                <span className="hidden md:flex items-center gap-1 text-[11px] text-violet-700 font-medium">
+                  Last updated {lastSaved}
+                </span>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => navigate("/clients")}
+                  className="flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1.5 rounded-lg transition-colors border border-emerald-200"
+                >
+                  <UserPlus className="w-3 h-3" /> Dashboard Inputs
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => navigate("/settings")}
+                  className="flex items-center gap-1.5 text-xs bg-violet-50 hover:bg-violet-100 text-violet-700 font-medium px-3 py-1.5 rounded-lg transition-colors border border-violet-200"
+                >
+                  <Settings2 className="w-3 h-3" /> Settings
+                </button>
+              )}
+              <span className={`hidden md:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${canEdit ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-700"}`}>
+                <ShieldCheck className="w-3 h-3" />
+                {access?.role === "editor" ? "Editor" : "Read only"}
               </span>
-            )}
               <button
-                onClick={() => navigate("/clients")}
-                className="flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1.5 rounded-lg transition-colors border border-emerald-200"
+                onClick={() => void signOut()}
+                className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium px-3 py-1.5 rounded-lg transition-colors border border-slate-200"
               >
-                <UserPlus className="w-3 h-3" /> Dashboard Inputs
+                <LogOut className="w-3 h-3" /> Sign out
               </button>
-          </div>
+            </div>
         </div>
       </div>
 
@@ -669,9 +704,14 @@ export default function GlobalDashboardPage() {
                 <TotalBlock label="Total Sales" target={overall.total.target} actual={overall.total.actual} />
               </div>
             </>
-          ) : (
-            <div className="mt-6 space-y-5">
-              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            ) : (
+              <div className="mt-6 space-y-5">
+                {!canEdit && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    ARR Tracker is read-only for your account. Editors can update ARR values and add contract rows.
+                  </div>
+                )}
+                <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50 text-left text-[11px] uppercase tracking-wider text-gray-400">
@@ -685,6 +725,7 @@ export default function GlobalDashboardPage() {
                       <td className="px-5 py-4">
                         <ArrNumberField
                           value={arrTracker.arrAsOfLastMonth}
+                          disabled={!canEdit}
                           onChange={(value) => setArrTracker((prev) => ({ ...prev, arrAsOfLastMonth: value }))}
                         />
                       </td>
@@ -694,6 +735,7 @@ export default function GlobalDashboardPage() {
                       <td className="px-5 py-4">
                         <ArrNumberField
                           value={arrTracker.knownContractions}
+                          disabled={!canEdit}
                           onChange={(value) => setArrTracker((prev) => ({ ...prev, knownContractions: value }))}
                           negative
                         />
@@ -727,6 +769,7 @@ export default function GlobalDashboardPage() {
                 onAdd={() => addArrRow("signedThisMonth")}
                 onUpdate={(id, patch) => updateArrRow("signedThisMonth", id, patch)}
                 onRemove={(id) => removeArrRow("signedThisMonth", id)}
+                disabled={!canEdit}
               />
 
               <ArrTrackerTable
@@ -737,6 +780,7 @@ export default function GlobalDashboardPage() {
                 onAdd={() => addArrRow("waitingForSignature")}
                 onUpdate={(id, patch) => updateArrRow("waitingForSignature", id, patch)}
                 onRemove={(id) => removeArrRow("waitingForSignature", id)}
+                disabled={!canEdit}
               />
             </div>
           )}

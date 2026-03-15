@@ -7,10 +7,11 @@ import { loadStore, hasInputData, storeClientsToClientExpansion, loadLastSaved, 
 import { formatCurrency, attainmentPct, attainmentColor, attainmentBg } from "@/lib/formatters";
 import RevenueChart from "@/components/features/RevenueChart";
 import MetricPill from "@/components/features/MetricPill";
-import { TrendingUp, Building2, Pencil, Check, X, TableProperties, Users, UserCircle2, RefreshCw, CheckCircle2, AlertCircle, Globe2, UserPlus, ImagePlus } from "lucide-react";
+import { TrendingUp, Building2, Pencil, Check, X, TableProperties, Users, UserCircle2, RefreshCw, CheckCircle2, AlertCircle, Globe2, UserPlus, ImagePlus, Settings2, LogOut, ShieldCheck } from "lucide-react";
 import ClientRevenueTable from "@/components/features/ClientRevenueTable";
 import TeamMemberRevenueTable from "@/components/features/TeamMemberRevenueTable";
 import MappingConfigPanel, { MappingConfig, loadMappingConfig, saveMappingConfig } from "@/components/features/MappingConfigPanel";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -284,6 +285,7 @@ function EditableTargetCell({ value, isCustom, disabled, qc, onSave }: EditableC
 export default function TrackerPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { access, canEdit, signOut } = useAuth();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Load locally stored data if available
@@ -628,10 +630,12 @@ export default function TrackerPage() {
   }, [productLogos]);
 
   function triggerLogoPicker() {
+    if (!canEdit) return;
     logoInputRef.current?.click();
   }
 
   function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!canEdit) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -646,6 +650,7 @@ export default function TrackerPage() {
   }
 
   function removeProductLogo() {
+    if (!canEdit) return;
     setProductLogos((prev) => ({ ...prev, [productTab]: null }));
   }
 
@@ -695,20 +700,38 @@ export default function TrackerPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
-            {inputLastSaved && (
-              <span className="hidden md:flex items-center gap-1 text-xs text-violet-700 font-medium">
-                Last updated {inputLastSaved}
+            <div className="flex items-center gap-2">
+              {inputLastSaved && (
+                <span className="hidden md:flex items-center gap-1 text-xs text-violet-700 font-medium">
+                  Last updated {inputLastSaved}
+                </span>
+              )}
+              {canEdit && (
+                <button onClick={() => navigate("/clients")}
+                  className="flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-emerald-200"
+                >
+                  <UserPlus className="w-3 h-3" /> Dashboard Inputs
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => navigate("/settings")}
+                  className="flex items-center gap-1.5 text-xs bg-violet-50 hover:bg-violet-100 text-violet-700 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-violet-200"
+                >
+                  <Settings2 className="w-3 h-3" /> Settings
+                </button>
+              )}
+              <span className={`hidden md:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${canEdit ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-700"}`}>
+                <ShieldCheck className="w-3 h-3" />
+                {access?.role === "editor" ? "Editor" : "Read only"}
               </span>
-            )}
-
-            {/* Client Input */}
-            <button onClick={() => navigate("/clients")}
-              className="flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-emerald-200"
-            >
-              <UserPlus className="w-3 h-3" /> Clients
-            </button>
-          </div>
+              <button
+                onClick={() => void signOut()}
+                className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-slate-200"
+              >
+                <LogOut className="w-3 h-3" /> Sign out
+              </button>
+            </div>
         </div>
       </div>
 
@@ -733,20 +756,27 @@ export default function TrackerPage() {
               <h1 className={`text-2xl md:text-3xl font-bold tracking-tight ${pLabel.heroTitle}`}>
                 Digital RevTrack
               </h1>
-              <p className={`text-sm mt-1 ${pLabel.heroMuted}`}>Revenue Operations · Quarterly breakdown across ER / EN / NN</p>
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={triggerLogoPicker}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${pLabel.primaryBorder} ${pLabel.primaryBg} ${pLabel.primaryText}`}
-                >
-                  <ImagePlus className="w-3.5 h-3.5" />
-                  {productLogo ? "Change logo" : "Upload logo"}
-                </button>
-                {productLogo && (
+                <p className={`text-sm mt-1 ${pLabel.heroMuted}`}>Revenue Operations · Quarterly breakdown across ER / EN / NN</p>
+                {!canEdit && (
+                  <div className="mt-3 inline-flex rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+                    Read-only mode
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={removeProductLogo}
-                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700"
+                    onClick={triggerLogoPicker}
+                    disabled={!canEdit}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${pLabel.primaryBorder} ${pLabel.primaryBg} ${pLabel.primaryText}`}
                   >
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    {productLogo ? "Change logo" : "Upload logo"}
+                  </button>
+                  {productLogo && (
+                    <button
+                      onClick={removeProductLogo}
+                      disabled={!canEdit}
+                      className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700 disabled:cursor-not-allowed disabled:text-gray-300"
+                    >
                     <X className="w-3.5 h-3.5" />
                     Remove
                   </button>
@@ -969,7 +999,7 @@ export default function TrackerPage() {
                             </td>
                             <td key={`${q}-a`} className={`px-3 py-3 text-center ${future ? "bg-gray-50/50" : qc.cellBg}`}>
                               <EditableActualCell value={a} isCustom={isCustomActual(q,key)} isProjected={isProj}
-                                disabled={future} colorCls={isProj ? "text-blue-600" : colorCls} onSave={(v) => saveActual(q,key,v)} />
+                                  disabled={future || !canEdit} colorCls={isProj ? "text-blue-600" : colorCls} onSave={(v) => saveActual(q,key,v)} />
                             </td>
                             <td key={`${q}-p`} className={`px-3 py-3 text-center ${future ? "bg-gray-50/50" : qc.cellBg}`}>
                               {future ? <span className="text-gray-300">â€”</span> : (
@@ -1044,6 +1074,7 @@ export default function TrackerPage() {
             productTab={productTab}
             attColorLight={attColorLight}
             attBarColor={attBarColor}
+            canEdit={canEdit}
           />
         )}
 

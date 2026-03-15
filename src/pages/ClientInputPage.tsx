@@ -9,8 +9,9 @@ import { EXCEL_CLIENT_COUNT, ACCESS_HUB_CLIENT_COUNT, EVIDENCE_HUB_CLIENT_COUNT,
 import {
   UserPlus, Trash2, Save, CheckCircle2, Building2,
   ChevronDown, Globe2, Search, X, Plus, Info,
-  Users, Package, AlertCircle, FileSpreadsheet,
+  Users, Package, AlertCircle, FileSpreadsheet, Settings2, LogOut,
 } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 // ── Palette helpers ───────────────────────────────────────────────────────────
 const QUARTER_STYLE: Record<"Q1"|"Q2"|"Q3"|"Q4", {
@@ -728,6 +729,7 @@ function NNGrid({ store, onUpdate, onAddSalesperson, onRemoveSalesperson }: NNGr
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function ClientInputPage() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const [store, setStore] = useState<InputStore>(() => loadStore() ?? createEmptyStore());
   const [lastSaved, setLastSaved] = useState<string | null>(() => loadLastSaved());
@@ -1052,15 +1054,27 @@ export default function ClientInputPage() {
                 <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Saved {lastSaved}
               </span>
             )}
-            <button onClick={() => navigate("/")}
-              className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
-            >
-              <Globe2 className="w-3 h-3" /> Global Dashboard
-            </button>
-            <button onClick={handleSave}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all shadow-sm ${
-                saveFlash ? "bg-emerald-500 text-white" : "bg-violet-600 hover:bg-violet-700 text-white"
-              }`}
+              <button onClick={() => navigate("/")}
+                className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
+              >
+                <Globe2 className="w-3 h-3" /> Global Dashboard
+              </button>
+              <button
+                onClick={() => navigate("/settings")}
+                className="flex items-center gap-1.5 text-xs bg-violet-50 hover:bg-violet-100 text-violet-700 font-medium px-3 py-1.5 rounded-lg border border-violet-200 transition-colors"
+              >
+                <Settings2 className="w-3 h-3" /> Settings
+              </button>
+              <button
+                onClick={() => void signOut()}
+                className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
+              >
+                <LogOut className="w-3 h-3" /> Sign out
+              </button>
+              <button onClick={handleSave}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all shadow-sm ${
+                  saveFlash ? "bg-emerald-500 text-white" : "bg-violet-600 hover:bg-violet-700 text-white"
+                }`}
             >
               {saveFlash ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
               {saveFlash ? "Saved!" : "Save All"}

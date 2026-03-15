@@ -95,9 +95,10 @@ interface Props {
   productTab: string;
   attColorLight: (pct: number) => string;
   attBarColor: (pct: number) => string;
+  canEdit?: boolean;
 }
 
-export default function TeamMemberRevenueTable({ clients, productTab, attColorLight, attBarColor }: Props) {
+export default function TeamMemberRevenueTable({ clients, productTab, attColorLight, attBarColor, canEdit = true }: Props) {
   const [search, setSearch] = useState("");
   const [expandedMembers, setExpandedMembers] = useState<Record<string, boolean>>({});
   const [teamRoles, setTeamRoles] = useState<Record<string, TeamRole>>(() => loadTeamRoles());
@@ -336,29 +337,33 @@ export default function TeamMemberRevenueTable({ clients, productTab, attColorLi
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-gray-800 text-xs">{member.name}</span>
-                              {/* Role badge + assignment picker */}
-                              <div className="relative" onClick={e => e.stopPropagation()}>
-                                {(teamRoles[member.name] ?? primaryMappedRole(member.name)) ? (
-                                  <button
-                                    onClick={() => setEditingRole(editingRole === member.name ? null : member.name)}
-                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border transition-colors hover:opacity-80 ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].bg} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].text} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].border}`}
-                                    title="Click to change role"
-                                  >
-                                    {teamRoles[member.name] ?? primaryMappedRole(member.name)}
-                                    <ChevronDown className="w-2.5 h-2.5" />
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => setEditingRole(editingRole === member.name ? null : member.name)}
-                                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200 transition-colors"
-                                    title="Assign role"
-                                  >
-                                    + Role
-                                    <ChevronDown className="w-2.5 h-2.5" />
-                                  </button>
-                                )}
-                                {editingRole === member.name && (
+                                <span className="font-bold text-gray-800 text-xs">{member.name}</span>
+                                {/* Role badge + assignment picker */}
+                                <div className="relative" onClick={e => e.stopPropagation()}>
+                                {canEdit ? ((teamRoles[member.name] ?? primaryMappedRole(member.name)) ? (
+                                    <button
+                                      onClick={() => setEditingRole(editingRole === member.name ? null : member.name)}
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border transition-colors hover:opacity-80 ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].bg} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].text} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].border}`}
+                                      title="Click to change role"
+                                    >
+                                      {teamRoles[member.name] ?? primaryMappedRole(member.name)}
+                                      <ChevronDown className="w-2.5 h-2.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => setEditingRole(editingRole === member.name ? null : member.name)}
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200 transition-colors"
+                                      title="Assign role"
+                                    >
+                                      + Role
+                                      <ChevronDown className="w-2.5 h-2.5" />
+                                    </button>
+                                  )) : (
+                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].bg} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].text} ${ROLE_STYLE[teamRoles[member.name] ?? primaryMappedRole(member.name)].border}`}>
+                                      {teamRoles[member.name] ?? primaryMappedRole(member.name)}
+                                    </span>
+                                  )}
+                                {canEdit && editingRole === member.name && (
                                   <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden w-48">
                                     {ROLE_OPTIONS.map(role => (
                                       <button
