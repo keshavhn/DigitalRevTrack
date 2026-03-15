@@ -12,10 +12,13 @@ import ClientRevenueTable from "@/components/features/ClientRevenueTable";
 import TeamMemberRevenueTable from "@/components/features/TeamMemberRevenueTable";
 import MappingConfigPanel, { MappingConfig, loadMappingConfig, saveMappingConfig } from "@/components/features/MappingConfigPanel";
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 type ProductTab = "Nuro" | "Access Hub" | "Evidence Hub";
 type RevCatKey = "renewal" | "expansion" | "netNew";
@@ -383,6 +386,11 @@ export default function TrackerPage() {
 
   async function syncHubSpot() {
     const tab = productTab;
+    if (!supabase) {
+      setSyncStatus(prev => ({ ...prev, [tab]: "error" }));
+      setSyncError(prev => ({ ...prev, [tab]: "Supabase is not configured for this environment." }));
+      return;
+    }
     setSyncStatus(prev => ({ ...prev, [tab]: "syncing" }));
     setSyncError(prev => ({ ...prev, [tab]: null }));
 
